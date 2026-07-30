@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest a focused improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Research question or problem
+      description: What question should sig-impact make easier to answer?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include an example command and expected output if possible.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This can remain deterministic and offline.
+          required: true
+        - label: This does not require real cryptographic operations.
+          required: true
