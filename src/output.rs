@@ -21,12 +21,12 @@ fn percent(value: f64) -> String {
 pub fn table(impacts: &[Impact]) -> String {
     let headers = [
         "Scheme",
+        "vs ECDSA",
         "PK bytes",
         "Sig bytes",
         "Block bytes",
         "Day bytes",
         "Year bytes",
-        "vs ECDSA",
         "Saved",
     ];
     let rows: Vec<Vec<String>> = impacts
@@ -34,12 +34,12 @@ pub fn table(impacts: &[Impact]) -> String {
         .map(|impact| {
             vec![
                 impact.scheme.name.to_owned(),
+                format!("{:.2}x", impact.multiplier_vs_ecdsa),
                 integer(impact.pk_total),
                 integer(impact.sig_total),
                 integer(impact.bytes_per_block),
                 integer(impact.bytes_per_day),
                 integer(impact.bytes_per_year),
-                format!("{:.2}x", impact.multiplier_vs_ecdsa),
                 percent(impact.savings_vs_none),
             ]
         })
@@ -94,19 +94,19 @@ pub fn markdown(impacts: &[Impact], scenario: &Scenario) -> String {
         "# Signature impact report\n\nValidators: {} · Transactions/block: {} · Target TPS: {} · Aggregation: {}\n\n",
         scenario.validators, scenario.txs_per_block, scenario.target_tps, scenario.aggregation
     );
-    out.push_str("| Scheme | Public keys | Signatures | Bytes/block | Bytes/day | Bytes/year | vs ECDSA | Savings vs none |\n");
+    out.push_str("| Scheme | vs ECDSA | Public keys | Signatures | Bytes/block | Bytes/day | Bytes/year | Savings vs none |\n");
     out.push_str("|---|---:|---:|---:|---:|---:|---:|---:|\n");
     for impact in impacts {
         let _ = writeln!(
             out,
-            "| {} | {} | {} | {} | {} | {} | {:.2}x | {} |",
+            "| {} | {:.2}x | {} | {} | {} | {} | {} | {} |",
             impact.scheme.name,
+            impact.multiplier_vs_ecdsa,
             integer(impact.pk_total),
             integer(impact.sig_total),
             integer(impact.bytes_per_block),
             integer(impact.bytes_per_day),
             integer(impact.bytes_per_year),
-            impact.multiplier_vs_ecdsa,
             percent(impact.savings_vs_none)
         );
     }
@@ -175,4 +175,27 @@ pub fn output_path(base: &Path, extension: &str, multiple_files: bool) -> PathBu
         base.to_owned()
     };
     stem.with_extension(extension)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{calculate, AggregationMode};
+    use crate::sizes::find;
+
+    #[test]
+    fn table_prioritizes_ecdsa_multiplier() {
+        let scenario = Scenario {
+            validators: 100,
+            txs_per_block: 100,
+            target_tps: 50.0,
+            epoch_blocks: None,
+            aggregation: AggregationMode::None,
+            header_bytes: 0,
+        };
+        let ecdsa = find("ecdsa").unwrap();
+        let impact = calculate(find("mldsa65").unwrap(), &scenario, ecdsa);
+        let heading = table(&[impact]).lines().next().unwrap().to_owned();
+        assert!(heading.find("vs ECDSA").unwrap() < heading.find("PK bytes").unwrap());
+    }
 }

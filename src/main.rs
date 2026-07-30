@@ -54,7 +54,16 @@ struct Cli {
     #[arg(long, default_value_t = 0)]
     header_bytes: u64,
     /// Apply a scenario preset; explicit numeric flags override preset values.
-    #[arg(long, value_enum)]
+    #[arg(
+        long,
+        value_enum,
+        long_help = "Apply a scenario preset; explicit numeric flags override it.
+
+Preset values:
+  small-l1          100 validators, 100 tx/block, 50 TPS
+  ethereum-scale    1,000,000 validators, 200 tx/block, 20 TPS
+  heavy-validators  10,000 validators, 1,000 tx/block, 1,000 TPS"
+    )]
     preset: Option<Preset>,
 }
 
